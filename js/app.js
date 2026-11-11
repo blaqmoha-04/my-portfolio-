@@ -130,7 +130,9 @@
     currentProfile = profile;
     const hero = profile.hero;
     const title = document.querySelector("#hero-title");
-    title.replaceChildren();
+    title.textContent = profile.name;
+    const headline = document.querySelector("#hero-headline");
+    headline.replaceChildren();
     hero.headline.forEach((parts) => {
       const line = document.createElement("span");
       line.className = "headline-line";
@@ -140,10 +142,21 @@
         text.textContent = part.text;
         line.append(text);
       });
-      title.append(line);
+      headline.append(line);
     });
     document.querySelector("#hero-eyebrow").textContent = hero.eyebrow;
     document.querySelector("#hero-intro").textContent = hero.intro;
+    const profileImage = document.querySelector("#hero-profile-image");
+    const profileImageUrl = safeLink(profile.profileImage?.url);
+    profileImage.hidden = !profileImageUrl;
+    profileImage.closest(".hero-art").classList.toggle("has-profile-image", Boolean(profileImageUrl));
+    if (profileImageUrl) {
+      profileImage.src = profileImageUrl;
+      profileImage.alt = profile.profileImage.altText || `${profile.name} profile photo`;
+    } else {
+      profileImage.removeAttribute("src");
+      profileImage.alt = "";
+    }
     document.querySelector("#about-copy").textContent = profile.about;
     document.title = profile.website.title;
     document.querySelector("#meta-description").content = profile.website.description;

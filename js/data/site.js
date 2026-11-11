@@ -1,5 +1,6 @@
 window.PORTFOLIO_SITE = {
   name: "BLAQMOHA",
+  profileImage: null,
   email: "sadiktijanimohammed@gmail.com",
   website: {
     title: "BLAQMOHA PORTFOLIO",

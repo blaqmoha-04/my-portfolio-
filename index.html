@@ -1,14 +1,18 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f3f0e9">
-  <meta id="meta-description" name="description" content="A portfolio bringing graphic design and software development together.">
+  <meta id="meta-description" name="description"
+    content="A portfolio bringing graphic design and software development together.">
   <title>BLAQMOHA PORTFOLIO</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <script defer src="config/api.config.js"></script>
   <script defer src="js/data/site.js"></script>
@@ -16,6 +20,7 @@
   <script defer src="js/services/api.js"></script>
   <script defer src="js/app.js"></script>
 </head>
+
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
   <div class="scroll-progress" aria-hidden="true"></div>
@@ -35,20 +40,26 @@
   <main id="main">
     <section class="hero page-shell" id="home" aria-labelledby="hero-title">
       <div class="hero-copy">
-        <p class="eyebrow"><span class="status-dot"></span> <span id="hero-eyebrow">Independent creative & developer</span></p>
+        <p class="eyebrow"><span class="status-dot"></span> <span id="hero-eyebrow">Independent creative &
+            developer</span></p>
         <h1 id="hero-title"></h1>
+        <p class="hero-headline" id="hero-headline"></p>
         <div class="hero-bottom">
           <p class="hero-intro" id="hero-intro"></p>
-          <a class="round-link" href="#work" aria-label="Explore selected work"><span aria-hidden="true">↓</span></a>
+          <div class="hero-actions">
+            <a class="hero-action" href="#work">Explore work <span aria-hidden="true">↓</span></a>
+            <a class="hero-action hero-action-secondary" href="#contact">Contact me <span aria-hidden="true">↗</span></a>
+          </div>
         </div>
       </div>
-      <div class="hero-art" aria-hidden="true">
-        <div class="art-sun"></div>
-        <div class="art-orbit orbit-one"></div>
-        <div class="art-orbit orbit-two"></div>
-        <div class="art-label label-one">IDEAS<br>IN MOTION</div>
-        <div class="art-label label-two">DESIGN<br>MEETS CODE</div>
-        <span class="art-star">✳</span>
+      <div class="hero-art">
+        <div class="art-sun" aria-hidden="true"></div>
+        <img class="hero-profile-image" id="hero-profile-image" alt="" hidden>
+        <div class="art-orbit orbit-one" aria-hidden="true"></div>
+        <div class="art-orbit orbit-two" aria-hidden="true"></div>
+        <div class="art-label label-one" aria-hidden="true">IDEAS<br>IN MOTION</div>
+        <div class="art-label label-two" aria-hidden="true">DESIGN<br>MEETS CODE</div>
+        <span class="art-star" aria-hidden="true">✳</span>
       </div>
       <span class="hero-index">Portfolio / <span id="portfolio-year"></span></span>
     </section>
@@ -57,21 +68,30 @@
       <div class="ticker-track" aria-hidden="true">
         <span>Graphic design</span><i>✳</i><span>Software development</span><i>✳</i><span>Digital craft</span><i>✳</i>
         <span>Graphic design</span><i>✳</i><span>Software development</span><i>✳</i><span>Digital craft</span><i>✳</i>
+        <span>Graphic design</span><i>✳</i><span>Software development</span><i>✳</i><span>Digital craft</span><i>✳</i>
+        <span>Graphic design</span><i>✳</i><span>Software development</span><i>✳</i><span>Digital craft</span><i>✳</i>
+        <span>Graphic design</span><i>✳</i><span>Software development</span><i>✳</i><span>Digital craft</span><i>✳</i>
+        <span>Graphic design</span><i>✳</i><span>Software development</span><i>✳</i><span>Digital craft</span><i>✳</i>
+        <span>Graphic design</span><i>✳</i><span>Software development</span><i>✳</i><span>Digital craft</span><i>✳</i>
+        <span>Graphic design</span><i>✳</i><span>Software development</span><i>✳</i><span>Digital craft</span><i>✳</i>
+        <span>Graphic design</span><i>✳</i><span>Software development</span><i>✳</i><span>Digital craft</span><i>✳</i>
       </div>
     </div>
 
     <section class="work-section section-shell" id="work" aria-labelledby="work-title">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">01 / Selected work</p>
+          <p class="eyebrow"> Selected work</p>
           <h2 id="work-title">Made with <span class="serif-word">intention.</span></h2>
         </div>
         <p class="section-note">A home for the visual identities and digital products taking shape.</p>
       </div>
       <div class="filters" role="group" aria-label="Filter projects">
         <button class="filter-button is-active" type="button" data-filter="all" aria-pressed="true">All work</button>
-        <button class="filter-button" type="button" data-filter="graphic-design" aria-pressed="false">Graphic design</button>
-        <button class="filter-button" type="button" data-filter="software-development" aria-pressed="false">Software development</button>
+        <button class="filter-button" type="button" data-filter="graphic-design" aria-pressed="false">Graphic
+          design</button>
+        <button class="filter-button" type="button" data-filter="software-development" aria-pressed="false">Software
+          development</button>
       </div>
       <div class="project-grid" id="project-grid" aria-live="polite"></div>
     </section>
@@ -79,12 +99,13 @@
     <section class="about-section section-shell" id="about" aria-labelledby="about-title">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">02 / A little about me</p>
+          <p class="eyebrow"> A little about me</p>
           <h2 id="about-title">Curious by<br><span class="serif-word">nature.</span></h2>
         </div>
         <div class="about-copy">
           <p id="about-copy"></p>
-          <p class="about-aside">No one-size-fits-all answers. Just thoughtful choices, a little curiosity, and care for the details.</p>
+          <p class="about-aside">No one-size-fits-all answers. Just thoughtful choices, a little curiosity, and care for
+            the details.</p>
         </div>
       </div>
       <div class="values-row" aria-label="Creative principles">
@@ -97,7 +118,7 @@
     <section class="skills-section section-shell" id="skills" aria-labelledby="skills-title">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">03 / The toolkit</p>
+          <p class="eyebrow"> The toolkit</p>
           <h2 id="skills-title">Different tools.<br><span class="serif-word">Same curiosity.</span></h2>
         </div>
         <p class="section-note">A growing toolkit for shaping ideas from first sketch to finished screen.</p>
@@ -107,7 +128,7 @@
 
     <section class="contact-section" id="contact" aria-labelledby="contact-title">
       <div class="contact-inner section-shell">
-        <p class="eyebrow">04 / Your turn</p>
+        <p class="eyebrow"> Your turn</p>
         <h2 id="contact-title">Have a good<br><span class="serif-word">one in mind?</span></h2>
         <p class="contact-intro">Tell me what you’re thinking. A rough idea is a good place to start.</p>
         <form class="contact-form" id="contact-form">
@@ -117,16 +138,19 @@
           </label>
           <label>
             <span>Your email</span>
-            <input name="email" type="email" autocomplete="email" required maxlength="254" placeholder="you@example.com">
+            <input name="email" type="email" autocomplete="email" required maxlength="254"
+              placeholder="you@example.com">
           </label>
           <label class="message-field">
             <span>A little about your project</span>
-            <textarea name="message" rows="3" required maxlength="5000" placeholder="What are you hoping to make?"></textarea>
+            <textarea name="message" rows="3" required maxlength="5000"
+              placeholder="What are you hoping to make?"></textarea>
           </label>
           <button class="send-button" type="submit">Send a note <span aria-hidden="true">↗</span></button>
           <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
         </form>
-        <p class="email-note">Or write directly: <a id="email-link" href="mailto:sadiktijanimohammed@gmail.com">sadiktijanimohammed@gmail.com</a></p>
+        <p class="email-note">Or write directly: <a id="email-link"
+            href="mailto:sadiktijanimohammed@gmail.com">sadiktijanimohammed@gmail.com</a></p>
         <nav class="social-links" id="social-links" aria-label="Social links" hidden></nav>
       </div>
       <div class="contact-decoration" aria-hidden="true">✳</div>
@@ -139,4 +163,5 @@
     <p>© <span id="current-year"></span> <span id="footer-name">BLAQMOHA</span>. All rights reserved.</p>
   </footer>
 </body>
+
 </html>
