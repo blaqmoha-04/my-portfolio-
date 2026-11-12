@@ -8,14 +8,11 @@
   const contactForm = document.querySelector("#contact-form");
   const status = document.querySelector("#form-status");
   const dataStatus = document.querySelector("#portfolio-status");
-  const connectButton = document.querySelector("#connect-backend");
-  const connectionStatus = document.querySelector("#connection-status");
   const dataIssues = new Set();
   let projects = Array.isArray(window.PORTFOLIO_PROJECTS) ? window.PORTFOLIO_PROJECTS : [];
   let currentProfile = site;
   let activeFilter = "all";
   let contactSubmitting = false;
-  let backendConnected = false;
 
   function setDataIssue(source, message) {
     if (message) dataIssues.add(`${source}: ${message}`);
@@ -272,10 +269,6 @@
   contactForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (contactSubmitting || !contactForm.reportValidity()) return;
-    if (api.isConfigured() && !backendConnected) {
-      status.textContent = "Connect to your local backend before sending a message.";
-      return;
-    }
     const values = Object.fromEntries(new FormData(contactForm).entries());
     const button = contactForm.querySelector('button[type="submit"]');
     status.textContent = "";
@@ -348,38 +341,19 @@
     return profileLoaded && projectsLoaded;
   }
 
-  connectButton.addEventListener("click", async () => {
-    if (!api.isConfigured()) {
-      connectionStatus.textContent = "The local backend URL is not configured.";
-      return;
-    }
-    connectButton.disabled = true;
+  async function loadBackendContent() {
+    if (!api.isConfigured()) return;
     grid.setAttribute("aria-busy", "true");
-    connectionStatus.textContent = "Checking the local backend. Allow Local Network Access if Chrome asks.";
     try {
       await api.checkHealth();
-      backendConnected = true;
-      connectionStatus.textContent = "Backend connected. Loading live portfolio and project data.";
-      const allContentLoaded = await loadLiveContent();
-      connectionStatus.textContent = allContentLoaded
-        ? "Connected. Live portfolio and project data are loaded."
-        : "Connected, but some live data could not be loaded. Saved content remains visible where needed.";
+      setDataIssue("Connection", "");
+      await loadLiveContent();
     } catch (error) {
-      backendConnected = false;
       grid.setAttribute("aria-busy", "false");
-      if (error instanceof api.ApiError && error.status === 403) {
-        connectionStatus.textContent = "The backend rejected this site origin. Check its CORS allowlist.";
-      } else if (error instanceof api.ApiError && error.status >= 500) {
-        connectionStatus.textContent = "The backend responded, but its health check failed. Check that PostgreSQL is running.";
-      } else if (error instanceof api.ApiError) {
-        connectionStatus.textContent = `The backend could not connect: ${error.message}`;
-      } else {
-        connectionStatus.textContent = "Could not reach your local backend. Make sure it is running, this site is allowed by backend CORS, and allow Local Network Access if Chrome prompts.";
-      }
-    } finally {
-      connectButton.disabled = false;
+      console.warn("Could not connect to the local portfolio backend; saved content remains visible.", error);
+      setDataIssue("Connection", "showing saved content because the local backend could not be reached. Check the backend, CORS, and browser Local Network Access permission.");
     }
-  });
+  }
 
   renderSite(site);
   const year = new Date().getFullYear();
@@ -387,10 +361,7 @@
   document.querySelector("#portfolio-year").textContent = year;
   renderProjects();
   grid.setAttribute("aria-busy", "false");
-  if (!api.isConfigured()) {
-    connectButton.disabled = true;
-    connectionStatus.textContent = "The local backend URL is not configured. Showing saved portfolio content.";
-  }
+  void loadBackendContent();
   updateProgress();
   document.documentElement.classList.add("reveal-ready");
 })();

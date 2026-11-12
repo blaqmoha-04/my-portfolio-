@@ -285,19 +285,6 @@ h2 {
   transition: color .2s, background .2s, transform .2s;
 }
 
-.hero-action:disabled {
-  cursor: wait;
-  opacity: .7;
-}
-
-.connection-status {
-  flex-basis: 100%;
-  max-width: 34rem;
-  margin: 0;
-  color: var(--muted);
-  font-size: .78rem;
-}
-
 .hero-action-secondary {
   background: transparent;
   color: var(--ink);
@@ -311,8 +298,8 @@ h2 {
 
 .hero-profile-image {
   display: block;
-  width: clamp(4.5rem, 8vw, 6rem);
-  height: clamp(4.5rem, 8vw, 6rem);
+  width: clamp(6rem, 10vw, 8rem);
+  height: clamp(6rem, 10vw, 8rem);
   margin: 0 0 1.25rem;
   border-radius: 50%;
   object-fit: cover;
