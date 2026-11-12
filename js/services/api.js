@@ -41,6 +41,13 @@
   window.PortfolioAPI = Object.freeze({
     ApiError,
     isConfigured: () => Boolean(config.apiBaseUrl),
+    checkHealth: async () => {
+      const health = await request("/api/health");
+      if (health?.status !== "ok" || health?.database !== "connected") {
+        throw new ApiError("The backend did not confirm PostgreSQL connectivity.", 503);
+      }
+      return health;
+    },
     getPortfolio: () => config.apiBaseUrl
       ? request("/api/portfolio")
       : Promise.resolve(window.PORTFOLIO_SITE),

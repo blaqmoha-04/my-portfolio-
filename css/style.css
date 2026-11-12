@@ -279,9 +279,23 @@ h2 {
   border-radius: 2rem;
   background: var(--ink);
   color: var(--paper);
+  cursor: pointer;
   font-size: .82rem;
   text-decoration: none;
   transition: color .2s, background .2s, transform .2s;
+}
+
+.hero-action:disabled {
+  cursor: wait;
+  opacity: .7;
+}
+
+.connection-status {
+  flex-basis: 100%;
+  max-width: 34rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: .78rem;
 }
 
 .hero-action-secondary {
@@ -296,27 +310,18 @@ h2 {
 }
 
 .hero-profile-image {
-  position: absolute;
-  z-index: 1;
-  inset: 18%;
-  width: 64%;
-  height: 64%;
+  display: block;
+  width: clamp(4.5rem, 8vw, 6rem);
+  height: clamp(4.5rem, 8vw, 6rem);
+  margin: 0 0 1.25rem;
   border-radius: 50%;
   object-fit: cover;
   object-position: center;
   background: var(--yellow);
 }
 
-.hero-art.has-profile-image .art-sun {
-  opacity: .25;
-}
-
-.hero-art .art-label {
-  z-index: 2;
-}
-
-.hero-art.has-profile-image .BM {
-  z-index: 2;
+.hero-profile-image[hidden] {
+  display: none;
 }
 
 .hero-action:focus-visible {

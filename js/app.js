@@ -8,11 +8,14 @@
   const contactForm = document.querySelector("#contact-form");
   const status = document.querySelector("#form-status");
   const dataStatus = document.querySelector("#portfolio-status");
+  const connectButton = document.querySelector("#connect-backend");
+  const connectionStatus = document.querySelector("#connection-status");
   const dataIssues = new Set();
   let projects = Array.isArray(window.PORTFOLIO_PROJECTS) ? window.PORTFOLIO_PROJECTS : [];
   let currentProfile = site;
   let activeFilter = "all";
   let contactSubmitting = false;
+  let backendConnected = false;
 
   function setDataIssue(source, message) {
     if (message) dataIssues.add(`${source}: ${message}`);
@@ -179,7 +182,6 @@
     const profileImage = document.querySelector("#hero-profile-image");
     const profileImageUrl = safeLink(profile.profileImage?.url);
     profileImage.hidden = !profileImageUrl;
-    profileImage.closest(".hero-art").classList.toggle("has-profile-image", Boolean(profileImageUrl));
     if (profileImageUrl) {
       profileImage.src = profileImageUrl;
       profileImage.alt = profile.profileImage.altText || `${profile.name} profile photo`;
@@ -270,6 +272,10 @@
   contactForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (contactSubmitting || !contactForm.reportValidity()) return;
+    if (api.isConfigured() && !backendConnected) {
+      status.textContent = "Connect to your local backend before sending a message.";
+      return;
+    }
     const values = Object.fromEntries(new FormData(contactForm).entries());
     const button = contactForm.querySelector('button[type="submit"]');
     status.textContent = "";
@@ -301,33 +307,90 @@
     }
   });
 
+  async function loadLiveContent() {
+    const [profileResult, projectsResult] = await Promise.allSettled([
+      api.getPortfolio(),
+      api.getProjects()
+    ]);
+    let profileLoaded = false;
+    let projectsLoaded = false;
+
+    if (profileResult.status === "fulfilled") {
+      try {
+        renderSite(profileResult.value);
+        setDataIssue("Profile", "");
+        profileLoaded = true;
+      } catch (error) {
+        console.error("The portfolio profile response could not be displayed.", error);
+        setDataIssue("Profile", "the live profile could not be displayed; saved profile content remains visible.");
+      }
+    } else {
+      console.warn("Could not load live portfolio profile; keeping the saved fallback content.", profileResult.reason);
+      setDataIssue("Profile", "showing saved fallback content because the live profile could not be loaded.");
+    }
+
+    if (projectsResult.status === "fulfilled") {
+      const items = projectsResult.value;
+      const liveProjects = Array.isArray(items) ? items : items?.projects;
+      if (Array.isArray(liveProjects)) {
+        projects = liveProjects;
+        renderProjects();
+        setDataIssue("Projects", "");
+        projectsLoaded = true;
+      } else {
+        setDataIssue("Projects", "the live projects response was invalid; saved project content remains visible.");
+      }
+    } else {
+      console.warn("Could not load live portfolio projects; keeping the saved fallback content.", projectsResult.reason);
+      setDataIssue("Projects", "showing saved fallback content because live projects could not be loaded.");
+    }
+    grid.setAttribute("aria-busy", "false");
+    return profileLoaded && projectsLoaded;
+  }
+
+  connectButton.addEventListener("click", async () => {
+    if (!api.isConfigured()) {
+      connectionStatus.textContent = "The local backend URL is not configured.";
+      return;
+    }
+    connectButton.disabled = true;
+    grid.setAttribute("aria-busy", "true");
+    connectionStatus.textContent = "Checking the local backend. Allow Local Network Access if Chrome asks.";
+    try {
+      await api.checkHealth();
+      backendConnected = true;
+      connectionStatus.textContent = "Backend connected. Loading live portfolio and project data.";
+      const allContentLoaded = await loadLiveContent();
+      connectionStatus.textContent = allContentLoaded
+        ? "Connected. Live portfolio and project data are loaded."
+        : "Connected, but some live data could not be loaded. Saved content remains visible where needed.";
+    } catch (error) {
+      backendConnected = false;
+      grid.setAttribute("aria-busy", "false");
+      if (error instanceof api.ApiError && error.status === 403) {
+        connectionStatus.textContent = "The backend rejected this site origin. Check its CORS allowlist.";
+      } else if (error instanceof api.ApiError && error.status >= 500) {
+        connectionStatus.textContent = "The backend responded, but its health check failed. Check that PostgreSQL is running.";
+      } else if (error instanceof api.ApiError) {
+        connectionStatus.textContent = `The backend could not connect: ${error.message}`;
+      } else {
+        connectionStatus.textContent = "Could not reach your local backend. Make sure it is running, this site is allowed by backend CORS, and allow Local Network Access if Chrome prompts.";
+      }
+    } finally {
+      connectButton.disabled = false;
+    }
+  });
+
   renderSite(site);
   const year = new Date().getFullYear();
   document.querySelector("#current-year").textContent = year;
   document.querySelector("#portfolio-year").textContent = year;
-  if (api.isConfigured()) {
-    api.getPortfolio().then((profile) => {
-      renderSite(profile);
-      setDataIssue("Profile", "");
-    }).catch((error) => {
-      console.warn("Could not load live portfolio profile; keeping the saved fallback content.", error);
-      setDataIssue("Profile", "showing saved fallback content while the API is unavailable.");
-    });
-  }
   renderProjects();
-  api.getProjects().then((items) => {
-    projects = Array.isArray(items) ? items : items.projects;
-    if (!Array.isArray(projects)) throw new api.ApiError("The projects response has an invalid format.", 502);
-    renderProjects();
-    document.querySelector("#project-grid").setAttribute("aria-busy", "false");
-    setDataIssue("Projects", "");
-  }).catch((error) => {
-    console.warn("Could not load live portfolio projects; keeping the saved fallback content.", error);
-    projects = Array.isArray(window.PORTFOLIO_PROJECTS) ? window.PORTFOLIO_PROJECTS : [];
-    renderProjects();
-    grid.setAttribute("aria-busy", "false");
-    setDataIssue("Projects", "showing saved fallback content while the API is unavailable.");
-  });
+  grid.setAttribute("aria-busy", "false");
+  if (!api.isConfigured()) {
+    connectButton.disabled = true;
+    connectionStatus.textContent = "The local backend URL is not configured. Showing saved portfolio content.";
+  }
   updateProgress();
   document.documentElement.classList.add("reveal-ready");
 })();
