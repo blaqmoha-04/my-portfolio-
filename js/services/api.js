@@ -1,5 +1,5 @@
 (() => {
-  const config = window.PORTFOLIO_CONFIG;
+  const config = window.PORTFOLIO_CONFIG || { apiBaseUrl: "" };
   const localProjects = window.PORTFOLIO_PROJECTS;
 
   class ApiError extends Error {
@@ -21,6 +21,7 @@
 
     const response = await fetch(url, {
       ...options,
+      credentials: "omit",
       headers: {
         Accept: "application/json",
         ...(options && options.body ? { "Content-Type": "application/json" } : {}),
@@ -28,17 +29,13 @@
       }
     });
 
+    const payload = response.status === 204 ? null : await response.json().catch(() => null);
     if (!response.ok) {
-      const message = `The portfolio API returned an error (${response.status}).`;
+      const message = payload?.error?.message || `The portfolio API returned an error (${response.status}).`;
       throw new ApiError(message, response.status);
     }
     if (response.status === 204) return null;
-    return response.json();
-  }
-
-  function requireAccessToken(accessToken) {
-    if (!accessToken) throw new ApiError("An administrator access token is required.", 401);
-    return { Authorization: `Bearer ${accessToken}` };
+    return payload;
   }
 
   window.PortfolioAPI = Object.freeze({
@@ -50,51 +47,6 @@
     getProjects: () => config.apiBaseUrl
       ? request("/api/projects")
       : Promise.resolve(localProjects),
-    createProject: (project, accessToken) => request("/api/projects", {
-      method: "POST",
-      headers: requireAccessToken(accessToken),
-      body: JSON.stringify(project)
-    }),
-    updateProject: (projectId, project, accessToken) => request(`/api/projects/${encodeURIComponent(projectId)}`, {
-      method: "PUT",
-      headers: requireAccessToken(accessToken),
-      body: JSON.stringify(project)
-    }),
-    deleteProject: (projectId, accessToken) => request(`/api/projects/${encodeURIComponent(projectId)}`, {
-      method: "DELETE",
-      headers: requireAccessToken(accessToken)
-    }),
-    getContactMessages: (accessToken) => request("/api/admin/messages", {
-      headers: requireAccessToken(accessToken)
-    }),
-    updateContactMessage: (messageId, updates, accessToken) => request(`/api/admin/messages/${encodeURIComponent(messageId)}`, {
-      method: "PATCH",
-      headers: requireAccessToken(accessToken),
-      body: JSON.stringify(updates)
-    }),
-    deleteContactMessage: (messageId, accessToken) => request(`/api/admin/messages/${encodeURIComponent(messageId)}`, {
-      method: "DELETE",
-      headers: requireAccessToken(accessToken)
-    }),
-    uploadProjectImage: async (file, accessToken) => {
-      const url = apiUrl("/api/uploads");
-      if (!url) throw new ApiError("The portfolio API has not been configured.", 0);
-      if (!accessToken) throw new ApiError("An administrator access token is required.", 401);
-      const formData = new FormData();
-      formData.append("file", file);
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
-        body: formData
-      });
-      if (!response.ok) throw new ApiError(`The portfolio API returned an error (${response.status}).`, response.status);
-      return response.json();
-    },
-    updatePortfolio: (portfolio, accessToken) => request("/api/portfolio", {
-      method: "PUT",
-      headers: requireAccessToken(accessToken),
-      body: JSON.stringify(portfolio)
-    }),
     sendContact: (message) => request("/api/contact", {
       method: "POST",
       body: JSON.stringify(message)

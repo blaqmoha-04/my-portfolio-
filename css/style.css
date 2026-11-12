@@ -315,7 +315,7 @@ h2 {
   z-index: 2;
 }
 
-.hero-art.has-profile-image .art-star {
+.hero-art.has-profile-image .BM {
   z-index: 2;
 }
 
@@ -371,7 +371,7 @@ h2 {
   transform: rotate(-8deg);
 }
 
-.art-star {
+.BM {
   position: absolute;
   top: 37%;
   left: 37%;
@@ -544,6 +544,22 @@ h2 {
   text-transform: uppercase;
 }
 
+.project-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+  margin: auto 0 .75rem;
+}
+
+.project-gallery img {
+  width: 3.25rem;
+  height: 3.25rem;
+  border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--paper);
+}
+
 .project-info {
   display: flex;
   align-items: flex-end;
@@ -587,6 +603,12 @@ h2 {
   max-width: 35rem;
   margin: .4rem 0 0;
   color: var(--muted);
+}
+
+.portfolio-status {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: .85rem;
 }
 
 .empty-mark {

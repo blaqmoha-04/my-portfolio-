@@ -7,9 +7,23 @@
   const navigation = document.querySelector("#primary-nav");
   const contactForm = document.querySelector("#contact-form");
   const status = document.querySelector("#form-status");
-  let projects = [];
+  const dataStatus = document.querySelector("#portfolio-status");
+  const dataIssues = new Set();
+  let projects = Array.isArray(window.PORTFOLIO_PROJECTS) ? window.PORTFOLIO_PROJECTS : [];
   let currentProfile = site;
   let activeFilter = "all";
+  let contactSubmitting = false;
+
+  function setDataIssue(source, message) {
+    if (message) dataIssues.add(`${source}: ${message}`);
+    else {
+      for (const issue of dataIssues) {
+        if (issue.startsWith(`${source}:`)) dataIssues.delete(issue);
+      }
+    }
+    dataStatus.textContent = [...dataIssues].join(" ");
+    dataStatus.hidden = dataIssues.size === 0;
+  }
 
   function closeMenu() {
     menuToggle.setAttribute("aria-expanded", "false");
@@ -72,6 +86,20 @@
     type.className = "project-type";
     type.textContent = project.category === "graphic-design" ? "Graphic design" : "Software development";
 
+    const galleryItems = Array.isArray(project.gallery) ? project.gallery : [];
+    const gallery = document.createElement("div");
+    gallery.className = "project-gallery";
+    gallery.setAttribute("aria-label", `${project.gallery?.length || 0} project gallery images`);
+    galleryItems.forEach((item, imageIndex) => {
+      const imageUrl = safeLink(item.url);
+      if (!imageUrl) return;
+      const image = document.createElement("img");
+      image.src = imageUrl;
+      image.alt = item.altText || `${project.title} gallery image ${imageIndex + 1}`;
+      image.loading = "lazy";
+      gallery.append(image);
+    });
+
     const info = document.createElement("div");
     info.className = "project-info";
     const text = document.createElement("div");
@@ -87,7 +115,9 @@
     arrow.setAttribute("aria-hidden", "true");
     arrow.textContent = link ? "↗" : "＋";
     info.append(text, arrow);
-    article.append(visual, type, info);
+    article.append(visual, type);
+    if (gallery.childElementCount) article.append(gallery);
+    article.append(info);
     return article;
   }
 
@@ -162,7 +192,7 @@
     document.querySelector("#meta-description").content = profile.website.description;
     const email = profile.email || "";
     const emailLink = document.querySelector("#email-link");
-    emailLink.textContent = email || "Add an email address in js/data/site.js";
+    emailLink.textContent = email || "Add an email address in the admin dashboard";
     emailLink.href = email ? `mailto:${email}` : "#contact";
     document.querySelector("#footer-tagline").textContent = profile.footerTagline;
     document.querySelector(".wordmark").setAttribute("aria-label", `${profile.name}, home`);
@@ -203,7 +233,7 @@
       } else {
         const placeholder = document.createElement("p");
         placeholder.className = "skill-placeholder";
-        placeholder.textContent = "Add your tools and specialties in js/data/site.js.";
+        placeholder.textContent = "Add accurate tools and specialties through the admin dashboard.";
         section.append(placeholder);
       }
       groups.append(section);
@@ -239,10 +269,11 @@
 
   contactForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (!contactForm.reportValidity()) return;
+    if (contactSubmitting || !contactForm.reportValidity()) return;
     const values = Object.fromEntries(new FormData(contactForm).entries());
     const button = contactForm.querySelector('button[type="submit"]');
     status.textContent = "";
+    contactSubmitting = true;
     button.disabled = true;
     try {
       if (!api.isConfigured()) {
@@ -265,6 +296,7 @@
         ? error.message
         : "Your message could not be sent. Please try again later.";
     } finally {
+      contactSubmitting = false;
       button.disabled = false;
     }
   });
@@ -274,19 +306,27 @@
   document.querySelector("#current-year").textContent = year;
   document.querySelector("#portfolio-year").textContent = year;
   if (api.isConfigured()) {
-    api.getPortfolio().then(renderSite).catch((error) => {
-      console.error("Could not load portfolio profile:", error);
-      document.querySelector("#about-copy").textContent = "The portfolio profile could not be loaded. Please try again later.";
-      document.querySelector("#skill-groups").textContent = "Skills could not be loaded.";
+    api.getPortfolio().then((profile) => {
+      renderSite(profile);
+      setDataIssue("Profile", "");
+    }).catch((error) => {
+      console.warn("Could not load live portfolio profile; keeping the saved fallback content.", error);
+      setDataIssue("Profile", "showing saved fallback content while the API is unavailable.");
     });
   }
+  renderProjects();
   api.getProjects().then((items) => {
     projects = Array.isArray(items) ? items : items.projects;
     if (!Array.isArray(projects)) throw new api.ApiError("The projects response has an invalid format.", 502);
     renderProjects();
+    document.querySelector("#project-grid").setAttribute("aria-busy", "false");
+    setDataIssue("Projects", "");
   }).catch((error) => {
-    console.error("Could not load portfolio projects:", error);
-    grid.textContent = "Projects could not be loaded. Please try again later.";
+    console.warn("Could not load live portfolio projects; keeping the saved fallback content.", error);
+    projects = Array.isArray(window.PORTFOLIO_PROJECTS) ? window.PORTFOLIO_PROJECTS : [];
+    renderProjects();
+    grid.setAttribute("aria-busy", "false");
+    setDataIssue("Projects", "showing saved fallback content while the API is unavailable.");
   });
   updateProgress();
   document.documentElement.classList.add("reveal-ready");
