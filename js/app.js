@@ -1,28 +1,299 @@
 (() => {
-  const site = window.PORTFOLIO_SITE;
+  const content = window.PORTFOLIO_CONTENT;
+  const personal = content.personalInfo;
+  const hero = content.heroContent;
+  const about = content.aboutContent;
+  const contact = content.contactInfo;
+  const settings = content.websiteSettings;
   const api = window.PortfolioAPI;
   const grid = document.querySelector("#project-grid");
   const filters = [...document.querySelectorAll(".filter-button")];
   const menuToggle = document.querySelector(".menu-toggle");
   const navigation = document.querySelector("#primary-nav");
+  const profileTransition = document.querySelector(".profile-transition");
+  const profileStage = document.querySelector(".profile-stage");
+  const navProfileSlot = document.querySelector(".nav-profile-slot");
   const contactForm = document.querySelector("#contact-form");
-  const status = document.querySelector("#form-status");
-  const dataStatus = document.querySelector("#portfolio-status");
-  const dataIssues = new Set();
-  let projects = Array.isArray(window.PORTFOLIO_PROJECTS) ? window.PORTFOLIO_PROJECTS : [];
-  let currentProfile = site;
+  const formStatus = document.querySelector("#form-status");
+  let projects = [];
+  let projectState = "loading";
   let activeFilter = "all";
-  let contactSubmitting = false;
+  let profileFrame = 0;
 
-  function setDataIssue(source, message) {
-    if (message) dataIssues.add(`${source}: ${message}`);
-    else {
-      for (const issue of dataIssues) {
-        if (issue.startsWith(`${source}:`)) dataIssues.delete(issue);
-      }
+  function safeLink(value) {
+    if (typeof value !== "string" || !value.trim()) return "";
+    try {
+      const url = new URL(value, window.location.href);
+      if (url.protocol === "http:" || url.protocol === "https:") return url.href;
+    } catch (error) {
+      return "";
     }
-    dataStatus.textContent = [...dataIssues].join(" ");
-    dataStatus.hidden = dataIssues.size === 0;
+    return "";
+  }
+
+  function setText(selector, value) {
+    document.querySelector(selector).textContent = value || "";
+  }
+
+  function renderLines(element, lines, lineClass = "") {
+    element.replaceChildren();
+    lines.forEach((parts, index) => {
+      if (index) {
+        if (lineClass) {
+          element.append(document.createElement("br"));
+        } else {
+          element.append(document.createElement("br"));
+        }
+      }
+      const line = lineClass ? document.createElement("span") : element;
+      if (lineClass) line.className = lineClass;
+      parts.forEach((part) => {
+        const span = document.createElement("span");
+        if (part.style === "serif" || part.style === "outline") span.className = `${part.style}-word`;
+        span.textContent = part.text;
+        line.append(span);
+      });
+      if (lineClass) element.append(line);
+    });
+  }
+
+  function renderSite() {
+    document.title = settings.title;
+    document.querySelector("#meta-description").content = settings.description;
+    const profileImage = document.querySelector(".profile-transition-image");
+    profileImage.src = personal.profileImage;
+    profileImage.alt = `${personal.fullName} profile photo`;
+    profileTransition.setAttribute("aria-label", `${personal.fullName}, home`);
+    setText("#nav-logo-text", settings.monogram);
+    document.querySelector(".nav-brand-mark").setAttribute("aria-label", `${personal.fullName}, home`);
+    document.querySelector(".footer-mark").setAttribute("aria-label", `${personal.fullName}, back to top`);
+
+    document.querySelectorAll("[data-nav-label]").forEach((link) => {
+      link.textContent = settings.navigation[link.dataset.navLabel];
+    });
+    setText("#nav-contact-label", settings.navigation.contact);
+    setText("#hero-title", personal.fullName);
+    setText("#hero-eyebrow", personal.professionalTitle);
+    setText("#hero-intro", hero.description);
+    setText("#hero-work-action", hero.actions.work);
+    setText("#hero-contact-action", hero.actions.contact);
+    renderLines(document.querySelector("#hero-headline"), hero.headline, "headline-line");
+
+    const ticker = document.querySelector("#ticker");
+    ticker.setAttribute("aria-label", settings.tickerLabel);
+    const track = ticker.querySelector(".ticker-track");
+    const tickerItems = [...settings.ticker, ...settings.ticker];
+    track.replaceChildren(...tickerItems.flatMap((label) => {
+      const text = document.createElement("span");
+      text.textContent = label;
+      const mark = document.createElement("i");
+      mark.textContent = settings.monogram;
+      return [text, mark];
+    }));
+
+    setText("#work-eyebrow", settings.work.eyebrow);
+    renderLines(document.querySelector("#work-title"), settings.work.heading);
+    setText("#work-note", settings.work.note);
+    filters.forEach((button) => {
+      button.textContent = settings.work.filters[button.dataset.filter];
+    });
+
+    setText("#about-eyebrow", about.eyebrow);
+    renderLines(document.querySelector("#about-title"), about.heading);
+    setText("#about-copy", about.description);
+    setText("#about-aside", about.aside);
+    const values = document.querySelector("#values-row");
+    values.setAttribute("aria-label", about.principles.join(", "));
+    values.replaceChildren(...about.principles.flatMap((principle, index) => {
+      const text = document.createElement("span");
+      text.textContent = principle;
+      if (index === about.principles.length - 1) return [text];
+      const mark = document.createElement("span");
+      mark.className = "value-mark";
+      mark.setAttribute("aria-hidden", "true");
+      mark.textContent = "↗";
+      return [text, mark];
+    }));
+
+    setText("#skills-eyebrow", settings.skillsSection.eyebrow);
+    renderLines(document.querySelector("#skills-title"), settings.skillsSection.heading);
+    setText("#skills-note", settings.skillsSection.note);
+
+    setText("#contact-eyebrow", contact.eyebrow);
+    renderLines(document.querySelector("#contact-title"), contact.heading);
+    setText("#contact-intro", contact.description);
+    setText("#contact-name-label", contact.form.nameLabel);
+    setText("#contact-email-label", contact.form.emailLabel);
+    setText("#contact-message-label", contact.form.messageLabel);
+    setText("#contact-submit-label", contact.form.submit);
+    contactForm.elements.name.placeholder = contact.form.namePlaceholder;
+    contactForm.elements.email.placeholder = contact.form.emailPlaceholder;
+    contactForm.elements.message.placeholder = contact.form.messagePlaceholder;
+    setText("#direct-email-label", contact.directEmailLabel);
+    const emailLink = document.querySelector("#email-link");
+    if (contact.email) {
+      emailLink.href = `mailto:${contact.email}`;
+      emailLink.textContent = contact.email;
+      emailLink.hidden = false;
+    } else {
+      emailLink.removeAttribute("href");
+      emailLink.textContent = "";
+      emailLink.hidden = true;
+    }
+    setText("#contact-decoration", settings.monogram);
+
+    const socialLinks = document.querySelector("#social-links");
+    socialLinks.replaceChildren();
+    content.socialLinks.forEach((item) => {
+      const url = safeLink(item.url);
+      if (!url) return;
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = item.label;
+      socialLinks.append(link);
+    });
+    socialLinks.hidden = socialLinks.childElementCount === 0;
+
+    const groups = document.querySelector("#skill-groups");
+    groups.replaceChildren();
+    content.skills.forEach((group, index) => {
+      const section = document.createElement("section");
+      section.className = "skill-group reveal";
+      section.style.setProperty("--reveal-delay", `${(index % 2) * 70}ms`);
+      const heading = document.createElement("h3");
+      heading.textContent = group.category;
+      section.append(heading);
+      if (group.items.length) {
+        const list = document.createElement("ul");
+        list.className = "skill-list";
+        group.items.forEach((skill) => {
+          const item = document.createElement("li");
+          item.textContent = skill;
+          list.append(item);
+        });
+        section.append(list);
+      } else {
+        const placeholder = document.createElement("p");
+        placeholder.className = "skill-placeholder";
+        placeholder.textContent = settings.skillsSection.empty;
+        section.append(placeholder);
+      }
+      groups.append(section);
+    });
+
+    setText("#footer-logo-text", settings.monogram);
+    setText("#footer-tagline", settings.footer.tagline);
+    setText("#footer-name", settings.brandName);
+    setText("#footer-rights", settings.footer.rights);
+    const year = new Date().getFullYear();
+    setText("#current-year", year);
+    setText("#portfolio-year", year);
+  }
+
+  function renderProject(project, index) {
+    const article = document.createElement("article");
+    article.className = "project-card reveal";
+    article.style.setProperty("--card-color", ["#dfd2c2", "#d4d9ce", "#e2cfbd", "#d7d5c7"][index % 4]);
+    article.style.setProperty("--reveal-delay", `${(index % 4) * 70}ms`);
+
+    const visual = document.createElement("div");
+    visual.className = "project-visual";
+    visual.setAttribute("aria-hidden", "true");
+    const thumbnail = safeLink(project.thumbnail);
+    if (thumbnail) {
+      const image = document.createElement("img");
+      image.src = thumbnail;
+      image.alt = "";
+      image.loading = "lazy";
+      visual.append(image);
+    }
+
+    const type = document.createElement("span");
+    type.className = "project-type";
+    const category = settings.work.filters[project.category] || "Project";
+    type.textContent = project.featured ? `${settings.work.featuredLabel} · ${category}` : category;
+
+    const galleryItems = Array.isArray(project.gallery) ? project.gallery : [];
+    const gallery = document.createElement("div");
+    gallery.className = "project-gallery";
+    gallery.setAttribute("aria-label", `${galleryItems.length} project gallery images`);
+    galleryItems.forEach((item, imageIndex) => {
+      const imageUrl = safeLink(item.url);
+      if (!imageUrl) return;
+      const image = document.createElement("img");
+      image.src = imageUrl;
+      image.alt = item.altText || `${project.title} gallery image ${imageIndex + 1}`;
+      image.loading = "lazy";
+      gallery.append(image);
+    });
+
+    const info = document.createElement("div");
+    info.className = "project-info";
+    const text = document.createElement("div");
+    const title = document.createElement("h3");
+    title.textContent = project.title;
+    text.append(title);
+    if (project.summary) {
+      const summary = document.createElement("p");
+      summary.textContent = project.summary;
+      text.append(summary);
+    }
+    const technologies = Array.isArray(project.technologies) ? project.technologies : project.tags;
+    if (Array.isArray(technologies) && technologies.length) {
+      const techList = document.createElement("p");
+      techList.className = "project-technologies";
+      techList.textContent = technologies.join(" · ");
+      text.append(techList);
+    }
+    info.append(text);
+
+    const links = document.createElement("div");
+    links.className = "project-links";
+    const demoUrl = safeLink(project.liveDemoUrl || project.url);
+    const githubUrl = safeLink(project.githubUrl);
+    [[demoUrl, settings.work.demoLink], [githubUrl, settings.work.githubLink]].forEach(([url, label]) => {
+      if (!url) return;
+      const link = document.createElement("a");
+      link.className = "project-link";
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = label;
+      links.append(link);
+    });
+
+    article.append(visual, type);
+    if (gallery.childElementCount) article.append(gallery);
+    article.append(info);
+    if (links.childElementCount) article.append(links);
+    return article;
+  }
+
+  function renderProjects() {
+    const visible = projects.filter((project) => activeFilter === "all" || project.category === activeFilter);
+    grid.replaceChildren();
+    if (visible.length) {
+      visible.forEach((project, index) => grid.append(renderProject(project, index)));
+      observeReveals();
+      return;
+    }
+
+    const empty = document.createElement("div");
+    empty.className = "empty-projects";
+    const mark = document.createElement("span");
+    mark.className = "empty-mark";
+    mark.textContent = "✳";
+    mark.setAttribute("aria-hidden", "true");
+    const message = document.createElement("p");
+    if (projectState === "loading") message.textContent = settings.work.loading;
+    else if (projectState === "offline") message.textContent = settings.work.unavailable;
+    else if (projectState === "not-configured") message.textContent = settings.work.notConfigured;
+    else if (activeFilter === "all") message.textContent = settings.work.empty;
+    else message.textContent = settings.work.emptyByFilter[activeFilter] || settings.work.empty;
+    empty.append(mark, message);
+    grid.append(empty);
   }
 
   function closeMenu() {
@@ -44,105 +315,9 @@
     if (event.key === "Escape") closeMenu();
   });
   window.addEventListener("resize", () => {
+    scheduleProfilePosition();
     if (window.innerWidth > 760) closeMenu();
   });
-
-  function safeLink(value) {
-    if (typeof value !== "string" || !value.trim()) return "";
-    try {
-      const url = new URL(value, window.location.href);
-      if (url.protocol === "http:" || url.protocol === "https:") return url.href;
-    } catch (error) {
-      return "";
-    }
-    return "";
-  }
-
-  function renderProject(project, index) {
-    const link = safeLink(project.url);
-    const article = document.createElement(link ? "a" : "article");
-    article.className = "project-card reveal";
-    article.style.setProperty("--card-color", ["#dfd2c2", "#d4d9ce", "#e2cfbd", "#d7d5c7"][index % 4]);
-    if (link) {
-      article.href = link;
-      article.target = "_blank";
-      article.rel = "noopener noreferrer";
-      article.setAttribute("aria-label", `${project.title} — opens in a new tab`);
-    }
-
-    const visual = document.createElement("div");
-    visual.className = "project-visual";
-    visual.setAttribute("aria-hidden", "true");
-    const thumbnail = safeLink(project.thumbnail);
-    if (thumbnail) {
-      const image = document.createElement("img");
-      image.src = thumbnail;
-      image.alt = "";
-      image.loading = "lazy";
-      visual.append(image);
-    }
-
-    const type = document.createElement("span");
-    type.className = "project-type";
-    type.textContent = project.category === "graphic-design" ? "Graphic design" : "Software development";
-
-    const galleryItems = Array.isArray(project.gallery) ? project.gallery : [];
-    const gallery = document.createElement("div");
-    gallery.className = "project-gallery";
-    gallery.setAttribute("aria-label", `${project.gallery?.length || 0} project gallery images`);
-    galleryItems.forEach((item, imageIndex) => {
-      const imageUrl = safeLink(item.url);
-      if (!imageUrl) return;
-      const image = document.createElement("img");
-      image.src = imageUrl;
-      image.alt = item.altText || `${project.title} gallery image ${imageIndex + 1}`;
-      image.loading = "lazy";
-      gallery.append(image);
-    });
-
-    const info = document.createElement("div");
-    info.className = "project-info";
-    const text = document.createElement("div");
-    const title = document.createElement("h3");
-    title.textContent = project.title;
-    const description = document.createElement("p");
-    description.textContent = project.summary || "";
-    text.append(title);
-    if (description.textContent) text.append(description);
-
-    const arrow = document.createElement("span");
-    arrow.className = "project-arrow";
-    arrow.setAttribute("aria-hidden", "true");
-    arrow.textContent = link ? "↗" : "＋";
-    info.append(text, arrow);
-    article.append(visual, type);
-    if (gallery.childElementCount) article.append(gallery);
-    article.append(info);
-    return article;
-  }
-
-  function renderProjects() {
-    const visible = projects.filter((project) => activeFilter === "all" || project.category === activeFilter);
-    grid.replaceChildren();
-    if (visible.length) {
-      visible.forEach((project, index) => grid.append(renderProject(project, index)));
-      observeReveals();
-      return;
-    }
-
-    const empty = document.createElement("div");
-    empty.className = "empty-projects";
-    const mark = document.createElement("span");
-    mark.className = "empty-mark";
-    mark.textContent = "✳";
-    mark.setAttribute("aria-hidden", "true");
-    const message = document.createElement("p");
-    message.textContent = activeFilter === "all"
-      ? "Projects will appear here as they’re ready to share. Nothing has been added yet."
-      : `No ${activeFilter === "graphic-design" ? "graphic design" : "software development"} projects have been added yet.`;
-    empty.append(mark, message);
-    grid.append(empty);
-  }
 
   filters.forEach((button) => {
     button.addEventListener("click", () => {
@@ -155,89 +330,6 @@
       renderProjects();
     });
   });
-
-  function renderSite(profile) {
-    currentProfile = profile;
-    const hero = profile.hero;
-    const title = document.querySelector("#hero-title");
-    title.textContent = profile.name;
-    const headline = document.querySelector("#hero-headline");
-    headline.replaceChildren();
-    hero.headline.forEach((parts) => {
-      const line = document.createElement("span");
-      line.className = "headline-line";
-      parts.forEach((part) => {
-        const text = document.createElement("span");
-        if (part.style === "serif" || part.style === "outline") text.className = `${part.style}-word`;
-        text.textContent = part.text;
-        line.append(text);
-      });
-      headline.append(line);
-    });
-    document.querySelector("#hero-eyebrow").textContent = hero.eyebrow;
-    document.querySelector("#hero-intro").textContent = hero.intro;
-    const profileImage = document.querySelector("#hero-profile-image");
-    const profileImageUrl = safeLink(profile.profileImage?.url);
-    profileImage.hidden = !profileImageUrl;
-    if (profileImageUrl) {
-      profileImage.src = profileImageUrl;
-      profileImage.alt = profile.profileImage.altText || `${profile.name} profile photo`;
-    } else {
-      profileImage.removeAttribute("src");
-      profileImage.alt = "";
-    }
-    document.querySelector("#about-copy").textContent = profile.about;
-    document.title = profile.website.title;
-    document.querySelector("#meta-description").content = profile.website.description;
-    const email = profile.email || "";
-    const emailLink = document.querySelector("#email-link");
-    emailLink.textContent = email || "Add an email address in the admin dashboard";
-    emailLink.href = email ? `mailto:${email}` : "#contact";
-    document.querySelector("#footer-tagline").textContent = profile.footerTagline;
-    document.querySelector(".wordmark").setAttribute("aria-label", `${profile.name}, home`);
-    document.querySelector(".footer-mark").setAttribute("aria-label", `${profile.name}, back to top`);
-    document.querySelector("#footer-name").textContent = profile.name;
-
-    const socialLinks = document.querySelector("#social-links");
-    socialLinks.replaceChildren();
-    profile.socialLinks.forEach((item) => {
-      const url = safeLink(item.url);
-      if (!url) return;
-      const link = document.createElement("a");
-      link.href = url;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      link.textContent = item.label;
-      socialLinks.append(link);
-    });
-    socialLinks.hidden = socialLinks.childElementCount === 0;
-
-    const groups = document.querySelector("#skill-groups");
-    groups.replaceChildren();
-    profile.skills.forEach((group) => {
-      const section = document.createElement("section");
-      section.className = "skill-group";
-      const heading = document.createElement("h3");
-      heading.textContent = group.category;
-      section.append(heading);
-      if (group.items.length) {
-        const list = document.createElement("ul");
-        list.className = "skill-list";
-        group.items.forEach((skill) => {
-          const item = document.createElement("li");
-          item.textContent = skill;
-          list.append(item);
-        });
-        section.append(list);
-      } else {
-        const placeholder = document.createElement("p");
-        placeholder.className = "skill-placeholder";
-        placeholder.textContent = "Add accurate tools and specialties through the admin dashboard.";
-        section.append(placeholder);
-      }
-      groups.append(section);
-    });
-  }
 
   function observeReveals() {
     const revealItems = document.querySelectorAll(".reveal:not(.is-visible)");
@@ -259,109 +351,113 @@
     }, { threshold: 0.12 })
     : null;
 
+  if ("IntersectionObserver" in window) {
+    const navigationLinks = [...navigation.querySelectorAll('a[href^="#"]')];
+    const sectionsInView = new Set();
+    const sectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) sectionsInView.add(entry.target);
+        else sectionsInView.delete(entry.target);
+      });
+
+      const currentSection = [...sectionsInView].sort((a, b) => {
+        const marker = window.innerHeight * 0.35;
+        return Math.abs(a.getBoundingClientRect().top - marker) - Math.abs(b.getBoundingClientRect().top - marker);
+      })[0];
+      navigationLinks.forEach((link) => {
+        if (currentSection && link.hash === `#${currentSection.id}`) {
+          link.setAttribute("aria-current", "location");
+        } else {
+          link.removeAttribute("aria-current");
+        }
+      });
+    }, { rootMargin: "-30% 0px -60% 0px", threshold: 0 });
+
+    navigationLinks.forEach((link) => {
+      const section = document.querySelector(link.hash);
+      if (section) sectionObserver.observe(section);
+    });
+  }
+
+  function updateProfilePosition() {
+    profileFrame = 0;
+    const stage = profileStage.getBoundingClientRect();
+    const slot = navProfileSlot.getBoundingClientRect();
+    const header = document.querySelector(".site-header").getBoundingClientRect();
+    const heroSize = parseFloat(window.getComputedStyle(profileTransition).fontSize);
+    const navSize = slot.width;
+    const scrollProgress = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? (window.scrollY > 0 ? 1 : 0)
+      : Math.min(1, Math.max(0, window.scrollY / 320));
+    const easedProgress = scrollProgress * scrollProgress * (3 - 2 * scrollProgress);
+    const startLeft = stage.left + (stage.width - heroSize) / 2;
+    const startTop = stage.top + window.scrollY + (stage.height - heroSize) / 2;
+    const targetLeft = slot.left + (slot.width - navSize) / 2;
+    const targetTop = header.top + (header.height - navSize) / 2;
+    const mix = (start, end) => start + (end - start) * easedProgress;
+
+    const scale = mix(heroSize, navSize) / heroSize;
+    profileTransition.style.transform = `translate3d(${mix(startLeft, targetLeft)}px, ${mix(startTop, targetTop)}px, 0) scale(${scale})`;
+  }
+
+  function scheduleProfilePosition() {
+    if (profileFrame) return;
+    profileFrame = window.requestAnimationFrame(updateProfilePosition);
+  }
+
   function updateProgress() {
     const max = document.documentElement.scrollHeight - window.innerHeight;
     const progress = max > 0 ? Math.min(100, Math.max(0, window.scrollY / max * 100)) : 0;
-    document.querySelector(".scroll-progress").style.width = `${progress}%`;
+    document.querySelector(".scroll-progress").style.transform = `scaleX(${progress / 100})`;
+    scheduleProfilePosition();
   }
+
   window.addEventListener("scroll", updateProgress, { passive: true });
 
-  contactForm.addEventListener("submit", async (event) => {
+  contactForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    if (contactSubmitting || !contactForm.reportValidity()) return;
-    const values = Object.fromEntries(new FormData(contactForm).entries());
-    const button = contactForm.querySelector('button[type="submit"]');
-    status.textContent = "";
-    contactSubmitting = true;
-    button.disabled = true;
-    try {
-      if (!api.isConfigured()) {
-        const email = currentProfile.email;
-        if (!email) {
-          status.textContent = "Add your email to the portfolio profile to enable the email fallback.";
-          return;
-        }
-        const subject = encodeURIComponent(`Portfolio enquiry from ${values.name}`);
-        const body = encodeURIComponent(`${values.message}\n\nFrom: ${values.name} (${values.email})`);
-        window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-        status.textContent = "Your email app should open with your message ready to send.";
-      } else {
-        await api.sendContact(values);
-        contactForm.reset();
-        status.textContent = "Thanks — your message has been sent.";
-      }
-    } catch (error) {
-      status.textContent = error instanceof api.ApiError
-        ? error.message
-        : "Your message could not be sent. Please try again later.";
-    } finally {
-      contactSubmitting = false;
-      button.disabled = false;
+    if (!contactForm.reportValidity()) return;
+    if (!contact.email) {
+      formStatus.textContent = "Add your email address in frontend/js/data/portfolio.js to receive messages.";
+      return;
     }
+    const values = Object.fromEntries(new FormData(contactForm).entries());
+    const subject = encodeURIComponent(`Portfolio enquiry from ${values.name}`);
+    const body = encodeURIComponent(`${values.message}\n\nFrom: ${values.name} (${values.email})`);
+    window.location.href = `mailto:${contact.email}?subject=${subject}&body=${body}`;
+    formStatus.textContent = "Your email app should open with your message ready to send.";
   });
 
-  async function loadLiveContent() {
-    const [profileResult, projectsResult] = await Promise.allSettled([
-      api.getPortfolio(),
-      api.getProjects()
-    ]);
-    let profileLoaded = false;
-    let projectsLoaded = false;
-
-    if (profileResult.status === "fulfilled") {
-      try {
-        renderSite(profileResult.value);
-        setDataIssue("Profile", "");
-        profileLoaded = true;
-      } catch (error) {
-        console.error("The portfolio profile response could not be displayed.", error);
-        setDataIssue("Profile", "the live profile could not be displayed; saved profile content remains visible.");
-      }
-    } else {
-      console.warn("Could not load live portfolio profile; keeping the saved fallback content.", profileResult.reason);
-      setDataIssue("Profile", "showing saved fallback content because the live profile could not be loaded.");
+  async function loadProjects() {
+    if (!api.isConfigured()) {
+      projectState = "not-configured";
+      grid.setAttribute("aria-busy", "false");
+      renderProjects();
+      return;
     }
 
-    if (projectsResult.status === "fulfilled") {
-      const items = projectsResult.value;
-      const liveProjects = Array.isArray(items) ? items : items?.projects;
-      if (Array.isArray(liveProjects)) {
-        projects = liveProjects;
-        renderProjects();
-        setDataIssue("Projects", "");
-        projectsLoaded = true;
-      } else {
-        setDataIssue("Projects", "the live projects response was invalid; saved project content remains visible.");
-      }
-    } else {
-      console.warn("Could not load live portfolio projects; keeping the saved fallback content.", projectsResult.reason);
-      setDataIssue("Projects", "showing saved fallback content because live projects could not be loaded.");
-    }
-    grid.setAttribute("aria-busy", "false");
-    return profileLoaded && projectsLoaded;
-  }
-
-  async function loadBackendContent() {
-    if (!api.isConfigured()) return;
     grid.setAttribute("aria-busy", "true");
     try {
-      await api.checkHealth();
-      setDataIssue("Connection", "");
-      await loadLiveContent();
+      const response = await api.getProjects();
+      const liveProjects = Array.isArray(response) ? response : response?.projects;
+      if (!Array.isArray(liveProjects)) throw new Error("The project API response was invalid.");
+      projects = liveProjects;
+      projectState = "ready";
     } catch (error) {
+      console.warn("Could not load projects; the rest of the portfolio is still available.", error);
+      projects = [];
+      projectState = "offline";
+    } finally {
       grid.setAttribute("aria-busy", "false");
-      console.warn("Could not connect to the local portfolio backend; saved content remains visible.", error);
-      setDataIssue("Connection", "showing saved content because the local backend could not be reached. Check the backend, CORS, and browser Local Network Access permission.");
+      renderProjects();
     }
   }
 
-  renderSite(site);
-  const year = new Date().getFullYear();
-  document.querySelector("#current-year").textContent = year;
-  document.querySelector("#portfolio-year").textContent = year;
+  renderSite();
   renderProjects();
-  grid.setAttribute("aria-busy", "false");
-  void loadBackendContent();
+  void loadProjects();
+  updateProfilePosition();
   updateProgress();
   document.documentElement.classList.add("reveal-ready");
+  observeReveals();
 })();

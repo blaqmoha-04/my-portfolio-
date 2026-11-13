@@ -1,4 +1,6 @@
+const localHostname = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+
 window.PORTFOLIO_CONFIG = Object.freeze({
-  // This connects this browser to its own local backend; it is not a public API host.
-  apiBaseUrl: "http://localhost:4000"
+  // Set this to the deployed project API origin before publishing the frontend.
+  apiBaseUrl: localHostname ? "http://localhost:4000" : ""
 });

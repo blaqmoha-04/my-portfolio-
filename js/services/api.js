@@ -1,6 +1,5 @@
 (() => {
   const config = window.PORTFOLIO_CONFIG || { apiBaseUrl: "" };
-  const localProjects = window.PORTFOLIO_PROJECTS;
 
   class ApiError extends Error {
     constructor(message, status) {
@@ -41,22 +40,6 @@
   window.PortfolioAPI = Object.freeze({
     ApiError,
     isConfigured: () => Boolean(config.apiBaseUrl),
-    checkHealth: async () => {
-      const health = await request("/api/health");
-      if (health?.status !== "ok" || health?.database !== "connected") {
-        throw new ApiError("The backend did not confirm PostgreSQL connectivity.", 503);
-      }
-      return health;
-    },
-    getPortfolio: () => config.apiBaseUrl
-      ? request("/api/portfolio")
-      : Promise.resolve(window.PORTFOLIO_SITE),
-    getProjects: () => config.apiBaseUrl
-      ? request("/api/projects")
-      : Promise.resolve(localProjects),
-    sendContact: (message) => request("/api/contact", {
-      method: "POST",
-      body: JSON.stringify(message)
-    })
+    getProjects: () => request("/api/projects")
   });
 })();

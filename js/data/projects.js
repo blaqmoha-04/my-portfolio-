@@ -1,1 +1,0 @@
-window.PORTFOLIO_PROJECTS = [];
